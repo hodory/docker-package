@@ -1,0 +1,43 @@
+version: '3.3'
+services:
+  elasticsearch:
+    container_name: elastic001
+    image: elasticsearch:${ES_VERSION}
+    environment:
+      - cluster.name=${ES_CLUSTER_NAME}
+      - node.name=${ES_MASTER_NODE_NAME}
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - ${ES_MASTER_NODE_PORT1}:9200
+      - ${ES_MASTER_NODE_PORT2}:9300
+    stdin_open: true
+    tty: true
+  elasticsearch2:
+    container_name: elastic002
+    image: elasticsearch:${ES_VERSION}
+    environment:
+      - cluster.name=${ES_CLUSTER_NAME} # 클러스터명은 마스터 노드와 동일하게 설정해야합니다.
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=${ES_MASTER_NODE_NAME}"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - ${ES_SUB_NODE_PORT}:9300
+    depends_on:
+      - elasticsearch
+  kibana:
+    container_name: kibana
+    image: kibana:${KIBANA_VERSION}
+    depends_on: # elastic search 서비스가 생성된 이후에 서비스가 생성되어야함.
+      - elasticsearch
+      - elasticsearch2
+    ports:
+      - ${KIBANA_PORT}:5601
